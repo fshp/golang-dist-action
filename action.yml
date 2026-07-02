@@ -5,6 +5,9 @@ inputs:
   tag:
     description: Tag to create release on
     default: ${{ github.ref_name }}
+  workdir:
+    description: Directory containing the go.mod file (relative to repository root)
+    default: .
   exclude-directories:
     description: Space separated list of directories that contain a go.mod file to ignore
   vendor-dir:
@@ -25,6 +28,7 @@ runs:
 
     - name: Collect go-mod
       shell: bash
+      working-directory: ${{ inputs.workdir }}
       env:
         GOMODCACHE: "/tmp/go-mod"
       run: |
@@ -48,6 +52,7 @@ runs:
 
     - name: Collect vendor
       shell: bash
+      working-directory: ${{ inputs.workdir }}
       run: |
         if [[ -e go.work ]]; then
           echo "::group::Running go work vendor"
@@ -73,6 +78,7 @@ runs:
 
     - name: Create a vendor tarball
       shell: bash
+      working-directory: ${{ inputs.workdir }}
       env:
         XZ_OPT: "-T0 -9e"
       run: |
