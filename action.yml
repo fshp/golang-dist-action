@@ -26,6 +26,21 @@ runs:
         go-version: '^1.25.0'
         check-latest: true
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Collect pnpm
+      shell: bash
+      env:
+        PNPM_HOME: "/tmp/pnpm"
+      run: |
+        corepack enable
+        echo "::group::Running pnpm install"
+        pnpm install --frozen-lockfile || exit 1
+        echo "::endgroup::"
+
     - name: Collect go-mod
       shell: bash
       working-directory: ${{ inputs.workdir }}
@@ -89,6 +104,17 @@ runs:
           --transform 's,^,${{ inputs.vendor-dir }}/,' -acf "${{ inputs.dist-filename }}-vendor.tar.xz" vendor || exit 1
         echo "::endgroup::"
 
+    - name: Create pnpm tarball
+      shell: bash
+      env:
+        XZ_OPT: "-T0 -9e"
+      run: |
+        echo "::group::Creating dist tarball ${{ inputs.dist-filename }}-pnpm.tar.xz"
+        LC_ALL=C TZ=UTC tar -C /tmp \
+          --mtime="${SOURCE_DATE_EPOCH:-1970-01-01}" --sort=name --owner=250 --group=250 \
+          -acf "${{ inputs.dist-filename }}-pnpm.tar.xz" pnpm/store || exit 1
+        echo "::endgroup::"
+
     - name: Create release
       uses: softprops/action-gh-release@v2
       with:
@@ -96,5 +122,6 @@ runs:
         files: |
           ${{ inputs.workdir }}/${{ inputs.dist-filename }}-deps.tar.xz
           ${{ inputs.workdir }}/${{ inputs.dist-filename }}-vendor.tar.xz
+          ${{ inputs.dist-filename }}-pnpm.tar.xz
         tag_name: ${{ inputs.tag }}
         fail_on_unmatched_files: true
