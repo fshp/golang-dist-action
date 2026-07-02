@@ -66,6 +66,7 @@ runs:
 
     - name: Create a deps tarball
       shell: bash
+      working-directory: ${{ inputs.workdir }}
       env:
         XZ_OPT: "-T0 -9e"
       run: |
@@ -93,7 +94,7 @@ runs:
       with:
         body:
         files: |
-          ${{ inputs.dist-filename }}-deps.tar.xz
-          ${{ inputs.dist-filename }}-vendor.tar.xz
+          ${{ inputs.workdir }}/${{ inputs.dist-filename }}-deps.tar.xz
+          ${{ inputs.workdir }}/${{ inputs.dist-filename }}-vendor.tar.xz
         tag_name: ${{ inputs.tag }}
         fail_on_unmatched_files: true
